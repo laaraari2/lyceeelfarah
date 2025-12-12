@@ -10,11 +10,11 @@ interface ImageUploaderProps {
   overlayText?: string;
 }
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({ 
-  src, 
-  alt, 
-  onUpload, 
-  isEditable, 
+const ImageUploader: React.FC<ImageUploaderProps> = ({
+  src,
+  alt,
+  onUpload,
+  isEditable,
   className = "",
   containerClassName = "",
   overlayText = "Click to Upload"
@@ -41,12 +41,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   };
 
   return (
-    <div 
+    <div
       className={`relative group ${containerClassName} ${isEditable ? 'cursor-pointer' : ''}`}
       onClick={handleClick}
     >
       <img src={src} alt={alt} className={className} />
-      
+
       {isEditable && (
         <>
           <input

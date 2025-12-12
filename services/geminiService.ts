@@ -1,7 +1,7 @@
 
 import { ChatMessage } from "../types";
 
-// OpenAI API Key from environment variable
+// OpenAI API Key (provided by user)
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || "";
 
 const SYSTEM_INSTRUCTION = `

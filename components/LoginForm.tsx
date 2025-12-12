@@ -71,7 +71,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ role, language, onSuccess, onBack
                 {/* Logo & Title */}
                 <div className="text-center mb-8">
                     <div className="flex items-center justify-center gap-3 mb-4">
-                        <img src="/images/logo.jpg" alt="Logo" className="w-16 h-16 object-cover rounded-full" />
+                        <img src={`${import.meta.env.BASE_URL}images/logo.jpg`} alt="Logo" className="w-16 h-16 object-cover rounded-full" />
                         <h1 className="text-2xl font-bold text-gray-900">LYCÉE ELFARAH</h1>
                     </div>
                     <h2 className="text-xl font-semibold text-gray-700">{t.title}</h2>

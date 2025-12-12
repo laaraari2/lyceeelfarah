@@ -16,7 +16,7 @@ const Footer: React.FC<FooterProps> = ({ language, content, isEditable, onUpdate
           {/* About */}
           <div>
             <div className="flex items-center gap-3 mb-6">
-              <img src="/images/logo.jpg" alt="Logo" className="w-10 h-10 object-cover rounded-full" />
+              <img src={`${import.meta.env.BASE_URL}images/logo.jpg`} alt="Logo" className="w-10 h-10 object-cover rounded-full" />
               <span className="font-bold text-xl">LYCÉE ELFARAH</span>
             </div>
             {isEditable ? (

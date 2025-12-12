@@ -61,7 +61,7 @@ const INITIAL_CONTENT: MultiLangContent = {
         about: {
             title: 'كلمة المدير',
             description: "منذ تأسيس ثانوية الفرح الخصوصية سنة 1982، حرصت المؤسسة على بناء فضاء تربوي يجمع بين الجدية وجودة التعلمات. وعلى امتداد أربعة عقود من العمل، ظل هدفنا الأساسي هو توفير بيئة تعليمية آمنة ومحفزة، تُنمّي قدرات كل تلميذ وتفتح أمامه آفاق التميز.\n\nوتولي ثانوية الفرح اهتماماً كبيراً بـ الأنشطة المندمجة باعتبارها جزءاً أساسياً من تكوين شخصية التلميذ، فهي تساهم في تنمية روح الإبداع، وبناء الثقة في النفس، وتعزيز مهارات التواصل والعمل الجماعي. كما نعتمد برامج تربوية حديثة تحترم قيمنا الوطنية وتنفتح في الوقت نفسه على اللغات والثقافات العالمية.",
-            image: '/images/directeur.png',
+            image: `${import.meta.env.BASE_URL}images/directeur.png`,
             ctaText: 'اقرأ المزيد عن تاريخنا'
         },
         rules: {
@@ -143,7 +143,7 @@ const INITIAL_CONTENT: MultiLangContent = {
         about: {
             title: 'Mot du Fondateur',
             description: "Depuis la fondation du Lycée El Farah, notre objectif a toujours été de créer un environnement d'apprentissage inclusif et distingué. Nous croyons que chaque enfant possède un potentiel créatif, et notre mission est de libérer ce potentiel et de le guider vers le succès. Nous allions valeurs marocaines authentiques et ouverture sur le monde.",
-            image: '/images/directeur.png',
+            image: `${import.meta.env.BASE_URL}images/directeur.png`,
             ctaText: 'En savoir plus sur notre histoire'
         },
         rules: {
@@ -200,27 +200,76 @@ const App: React.FC = () => {
                 const arResult = await getLanguageContent('ar');
                 const frResult = await getLanguageContent('fr');
 
+                // Helpers
+                const isObject = (item: any) => {
+                    return (item && typeof item === 'object' && !Array.isArray(item));
+                };
+
+                const deepMerge = (target: any, source: any) => {
+                    const output = { ...target };
+                    if (isObject(target) && isObject(source)) {
+                        Object.keys(source).forEach(key => {
+                            if (isObject(source[key])) {
+                                if (!(key in target)) {
+                                    Object.assign(output, { [key]: source[key] });
+                                } else {
+                                    output[key] = deepMerge(target[key], source[key]);
+                                }
+                            } else {
+                                Object.assign(output, { [key]: source[key] });
+                            }
+                        });
+                    }
+                    return output;
+                };
+
+                const fixImagePaths = (obj: any): any => {
+                    if (typeof obj === 'string') {
+                        if (obj.startsWith('/images/')) {
+                            const baseUrl = import.meta.env.BASE_URL;
+                            if (baseUrl !== '/' && obj.startsWith(baseUrl)) return obj;
+                            return `${baseUrl}${obj.substring(1)}`;
+                        }
+                        return obj;
+                    }
+                    if (Array.isArray(obj)) {
+                        return obj.map(item => fixImagePaths(item));
+                    }
+                    if (isObject(obj)) {
+                        const newObj: any = {};
+                        Object.keys(obj).forEach(key => {
+                            newObj[key] = fixImagePaths(obj[key]);
+                        });
+                        return newObj;
+                    }
+                    return obj;
+                };
+
                 const newContent: MultiLangContent = { ...INITIAL_CONTENT };
 
                 // Merge Arabic content
                 if (arResult.success && arResult.data && arResult.data.length > 0) {
                     const arContent: any = {};
                     arResult.data.forEach((item: any) => {
-                        arContent[item.section] = item.content;
+                        if (item.content) {
+                            arContent[item.section] = item.content;
+                        }
                     });
-                    newContent.ar = { ...INITIAL_CONTENT.ar, ...arContent };
+                    newContent.ar = deepMerge(INITIAL_CONTENT.ar, arContent);
                 }
 
                 // Merge French content
                 if (frResult.success && frResult.data && frResult.data.length > 0) {
                     const frContent: any = {};
                     frResult.data.forEach((item: any) => {
-                        frContent[item.section] = item.content;
+                        if (item.content) {
+                            frContent[item.section] = item.content;
+                        }
                     });
-                    newContent.fr = { ...INITIAL_CONTENT.fr, ...frContent };
+                    newContent.fr = deepMerge(INITIAL_CONTENT.fr, frContent);
                 }
 
-                setContent(newContent);
+                setContent(fixImagePaths(newContent));
             } catch (error) {
                 console.error('Error loading content:', error);
                 // Keep INITIAL_CONTENT as fallback
@@ -491,6 +540,7 @@ const App: React.FC = () => {
                     <LessonsPage
                         language={language}
                         content={content[language].lessonsPage}
+                        materials={[]}
                         isEditable={isEditable}
                         onUpdate={updateLessonsPage}
                     />

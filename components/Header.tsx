@@ -66,7 +66,7 @@ const Header: React.FC<HeaderProps> = ({
             >
               <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-yassamine-gold shadow-sm group-hover:shadow-md transition-all">
                 <img
-                  src="/images/logo.jpg"
+                  src={`${import.meta.env.BASE_URL}images/logo.jpg`}
                   alt="Lycée El Farah Logo"
                   className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
                 />
@@ -116,8 +116,8 @@ const Header: React.FC<HeaderProps> = ({
                 <button
                   onClick={() => setIsEditingNav(!isEditingNav)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${isEditingNav
-                      ? 'bg-yellow-500 text-white shadow-md'
-                      : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                    ? 'bg-yellow-500 text-white shadow-md'
+                    : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
                     }`}
                   title={language === 'ar' ? 'تعديل القائمة' : 'Modifier le menu'}
                 >

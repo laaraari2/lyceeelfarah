@@ -11,7 +11,7 @@ interface HeroProps {
 
 const Hero: React.FC<HeroProps> = ({ language, content, isEditable, onUpdate }) => {
   // Increased resolution to 2560x1440 for high quality on large screens
-  const [heroImage, setHeroImage] = React.useState("/images/farah.png");
+  const [heroImage, setHeroImage] = React.useState(`${import.meta.env.BASE_URL}images/farah.png`);
 
   return (
     <div className="relative h-[80vh] min-h-[600px] w-full overflow-hidden">

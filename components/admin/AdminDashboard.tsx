@@ -56,7 +56,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, language, onLogou
                 {/* Logo */}
                 <div className="p-6 border-b border-gray-700">
                     <div className="flex items-center gap-3">
-                        <img src="/images/logo.jpg" alt="Logo" className="w-12 h-12 rounded-full" />
+                        <img src={`${import.meta.env.BASE_URL}images/logo.jpg`} alt="Logo" className="w-12 h-12 rounded-full" />
                         <div>
                             <h1 className="font-bold text-lg">LYCÉE ELFARAH</h1>
                             <p className="text-xs text-gray-400">لوحة الإدارة</p>
