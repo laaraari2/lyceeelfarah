@@ -11,7 +11,13 @@ interface HeroProps {
 
 const Hero: React.FC<HeroProps> = ({ language, content, isEditable, onUpdate }) => {
   // Increased resolution to 2560x1440 for high quality on large screens
-  const [heroImage, setHeroImage] = React.useState(`${import.meta.env.BASE_URL}images/farah.png`);
+  const [heroImage, setHeroImage] = React.useState(content.image || `${import.meta.env.BASE_URL}images/farah.png`);
+
+  React.useEffect(() => {
+    if (content.image) {
+      setHeroImage(content.image);
+    }
+  }, [content.image]);
 
   return (
     <div className="relative h-[80vh] min-h-[600px] w-full overflow-hidden">
@@ -23,7 +29,10 @@ const Hero: React.FC<HeroProps> = ({ language, content, isEditable, onUpdate }) 
         <ImageUploader
           src={heroImage}
           alt="Students learning"
-          onUpload={(base64) => setHeroImage(base64)}
+          onUpload={(base64) => {
+            setHeroImage(base64);
+            onUpdate('image', base64);
+          }}
           isEditable={isEditable}
           className="w-full h-full object-cover"
           containerClassName="w-full h-full"
@@ -31,12 +40,12 @@ const Hero: React.FC<HeroProps> = ({ language, content, isEditable, onUpdate }) 
         />
       </div>
 
-      {/* Animated Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 via-transparent to-cyan-900/30"></div>
+      {/* Animated Gradient Overlay - Added pointer-events-none to allow clicking the image uploader behind (or put uploader on top if desired, but here we want image back) */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 via-transparent to-cyan-900/30 pointer-events-none"></div>
 
       {/* Floating Shapes */}
-      <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-float"></div>
-      <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-float delay-300"></div>
+      <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-float pointer-events-none"></div>
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-float delay-300 pointer-events-none"></div>
 
       {/* Content */}
       <div className="relative h-full container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center pointer-events-none">

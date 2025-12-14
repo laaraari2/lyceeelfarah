@@ -91,14 +91,14 @@ export const saveAllContent = async (language: Language, contentData: SiteConten
     try {
         const { data: { user } } = await supabase.auth.getUser();
 
+        // Warning: proceed even if no user (for mock auth support)
         if (!user) {
-            console.error('❌ No authenticated user found');
-            return { success: false, error: 'User not authenticated' };
+            console.warn('⚠️ No authenticated Supabase user found. Attempting to save via open policy (Mock Auth mode).');
+        } else {
+            console.log('💾 Saving content as user:', { id: user.id, email: user.email });
         }
 
-        console.log('💾 Saving content as user:', { id: user.id, email: user.email });
-
-        // حفظ كل قسم على حدة
+        // Sections to save
         const sections = [
             { section: 'navItems', content: contentData.navItems },
             { section: 'hero', content: contentData.hero },
@@ -112,38 +112,34 @@ export const saveAllContent = async (language: Language, contentData: SiteConten
             { section: 'footer', content: contentData.footer }
         ];
 
-        const promises = sections.map(({ section, content }) =>
-            supabase
+        // Execute sequentially to avoid RLS/Connection contention
+        for (const { section, content } of sections) {
+            const upsertData: any = {
+                language,
+                section,
+                content
+            };
+
+            // Only add updated_by if we have a real user
+            if (user) {
+                upsertData.updated_by = user.id;
+            }
+
+            const { error } = await supabase
                 .from('site_content')
-                .upsert({
-                    language,
-                    section,
-                    content,
-                    updated_by: user?.id
-                }, {
+                .upsert(upsertData, {
                     onConflict: 'language,section'
-                })
-        );
-
-        const results = await Promise.all(promises);
-
-        // Check if any of the upserts failed
-        const errors = results.filter(result => result.error);
-        if (errors.length > 0) {
-            console.error('❌ Errors saving content:', errors);
-            errors.forEach((err, index) => {
-                console.error(`Error ${index + 1}:`, {
-                    message: err.error?.message,
-                    details: err.error?.details,
-                    hint: err.error?.hint,
-                    code: err.error?.code
                 });
-            });
-            return { success: false, error: errors[0].error?.message || 'Failed to save some sections' };
+
+            if (error) {
+                console.error(`❌ Error saving section [${section}]:`, error);
+                throw error;
+            }
         }
 
         console.log('✅ Content saved successfully');
         return { success: true };
+
     } catch (error: any) {
         console.error('❌ Error saving all content:', error);
         return { success: false, error: error.message };

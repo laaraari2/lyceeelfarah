@@ -13,8 +13,11 @@ import ChatWidget from './components/ChatWidget';
 import TeacherDashboard from './components/TeacherDashboard';
 import StudentDashboard from './components/StudentDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
+import Toast, { ToastType } from './components/Toast';
 import { Language, UserRole, MultiLangContent, SiteContent, EducationalLevel, NewsItem } from './types';
 import { getLanguageContent, saveAllContent } from './services/contentService';
+import { getPublicLessons, Lesson } from './services/lessonsService';
+import { onAuthStateChange } from './services/authService';
 
 // Initial Data for the CMS with High Resolution Images
 const INITIAL_CONTENT: MultiLangContent = {
@@ -76,15 +79,23 @@ const INITIAL_CONTENT: MultiLangContent = {
         },
         life: {
             title: "الحياة المدرسية",
-            description: "نحرص في ثانوية الفرح على توفير حياة مدرسية غنية ومتنوعة تساهم في صقل شخصية التلميذ. نوادينا التربوية (المسرح، الموسيقى، الروبوتيك، البيئة) تفتح أبوابها أسبوعياً لتنمية المواهب.\n\nننظم رحلات استكشافية ومسابقات رياضية وثقافية على مدار السنة لتعزيز روح الفريق والمنافسة الشريفة.",
-            image: "https://picsum.photos/seed/activity/1600/1200"
+            description: "نحرص في ثانوية الفرح على توفير حياة مدرسية غنية ومتنوعة تساهم في صقل شخصية التلميذ. نوادينا التربوية تفتح أبوابها أسبوعياً لتنمية المواهب والمهارات.",
+            image: "https://picsum.photos/seed/activity/1600/1200",
+            clubs: [
+                { id: 1, name: "نادي الفن", description: "فضاء للإبداع والتعبير الفني من خلال الرسم والتلوين والأشغال اليدوية، حيث يكتشف التلاميذ مواهبهم الفنية.", icon: "🎨" },
+                { id: 2, name: "نادي الصحة والبيئة", description: "يهدف إلى تعزيز الوعي الصحي والبيئي لدى التلاميذ من خلال أنشطة التوعية والمحافظة على البيئة.", icon: "🌿" },
+                { id: 3, name: "نادي التربية على المواطنة", description: "يعزز قيم المواطنة والانتماء للوطن من خلال أنشطة تربوية وثقافية متنوعة.", icon: "🏛️" },
+                { id: 4, name: "النادي الرياضي", description: "يوفر فرصة لممارسة مختلف الأنشطة الرياضية وتعزيز روح الفريق والمنافسة الشريفة.", icon: "⚽" },
+                { id: 5, name: "نادي الصحافة", description: "ينمي مهارات الكتابة والتحرير الصحفي وإنتاج المحتوى الإعلامي المدرسي.", icon: "📰" },
+                { id: 6, name: "نادي الإنصات", description: "فضاء للدعم النفسي والاجتماعي حيث يجد التلاميذ من يستمع إليهم ويساعدهم.", icon: "👂" }
+            ]
         },
         news: {
             title: "آخر الأخبار",
             items: [
-                { id: 1, title: "حفل التميز السنوي", date: "15 يونيو 2024", summary: "احتفالاً بتفوق تلامذتنا، نظمت المؤسسة حفلاً بهيجاً لتوزيع الجوائز على المتفوقين في مختلف الأسلاك.", image: "https://picsum.photos/seed/event1/1200/900", videoUrl: "https://www.youtube.com/watch?v=u8y4m5biv5Y" },
-                { id: 2, title: "أسبوع العلوم والتكنولوجيا", date: "20 ماي 2024", summary: "معرض للمشاريع العلمية التي أنجزها تلاميذ النادي العلمي، بحضور خبراء ومهندسين.", image: "https://picsum.photos/seed/event2/1200/900" },
-                { id: 3, title: "رحلة إلى إفران", date: "10 أبريل 2024", summary: "نظم النادي البيئي رحلة استكشافية إلى مدينة إفران للتعرف على التنوع البيولوجي بالمنطقة.", image: "https://picsum.photos/seed/event3/1200/900" }
+                { id: 1, title: "ذكرى المسيرة الخضراء", date: "06 نونبر 2024", summary: "تخليداً لذكرى المسيرة الخضراء المظفرة، نظمت المؤسسة أنشطة تربوية وفنية لترسيخ قيم المواطنة لدى الناشئة.", image: "https://picsum.photos/seed/event1/1200/900", videoUrl: "https://www.youtube.com/watch?v=u8y4m5biv5Y" },
+                { id: 2, title: "اللقاء الثقافي الربيعي", date: "20 ماي 2024", summary: "أيام ثقافية مفتوحة تضمنت عروضاً مسرحية وورشات فنية من إبداع تلاميذ المؤسسة، بحضور أولياء الأمور.", image: "https://picsum.photos/seed/event2/1200/900" },
+                { id: 3, title: "رحلة إلى إفران", date: "10 أبريل 2024", summary: "نظم النادي البيئي رحلة استكشافية إلى مدينة إفران للتعرف على التنوع البيولوجي وترسيخ الوعي البيئي.", image: "https://picsum.photos/seed/event3/1200/900" }
             ]
         },
         lessonsPage: {
@@ -158,15 +169,23 @@ const INITIAL_CONTENT: MultiLangContent = {
         },
         life: {
             title: "Vie Scolaire",
-            description: "Au Lycée El Farah, nous veillons à offrir une vie scolaire riche et diversifiée. Nos clubs éducatifs (Théâtre, Musique, Robotique, Environnement) ouvrent leurs portes chaque semaine pour développer les talents.\n\nNous organisons des excursions et des compétitions sportives tout au long de l'année.",
-            image: "https://picsum.photos/seed/activity/1600/1200"
+            description: "Au Lycée El Farah, nous veillons à offrir une vie scolaire riche et diversifiée. Nos clubs éducatifs ouvrent leurs portes chaque semaine pour développer les talents et compétences.",
+            image: "https://picsum.photos/seed/activity/1600/1200",
+            clubs: [
+                { id: 1, name: "Club d'Art", description: "Un espace de créativité et d'expression artistique à travers le dessin, la peinture et les travaux manuels.", icon: "🎨" },
+                { id: 2, name: "Club Santé et Environnement", description: "Vise à renforcer la sensibilisation à la santé et à l'environnement à travers des activités de protection.", icon: "🌿" },
+                { id: 3, name: "Club Éducation à la Citoyenneté", description: "Renforce les valeurs de citoyenneté et d'appartenance à travers des activités éducatives et culturelles.", icon: "🏛️" },
+                { id: 4, name: "Club Sportif", description: "Offre l'opportunité de pratiquer diverses activités sportives et de renforcer l'esprit d'équipe.", icon: "⚽" },
+                { id: 5, name: "Club Journalisme", description: "Développe les compétences en écriture, rédaction et production de contenu médiatique scolaire.", icon: "📰" },
+                { id: 6, name: "Club d'Écoute", description: "Un espace de soutien psychologique et social où les élèves trouvent une oreille attentive.", icon: "👂" }
+            ]
         },
         news: {
             title: "Dernières Actualités",
             items: [
-                { id: 1, title: "Cérémonie d'Excellence", date: "15 Juin 2024", summary: "Pour célébrer l'excellence de nos élèves, l'école a organisé une cérémonie de remise des prix.", image: "https://picsum.photos/seed/event1/1200/900", videoUrl: "https://www.youtube.com/watch?v=u8y4m5biv5Y" },
-                { id: 2, title: "Semaine des Sciences", date: "20 Mai 2024", summary: "Exposition de projets scientifiques réalisés par les élèves du club scientifique.", image: "https://picsum.photos/seed/event2/1200/900" },
-                { id: 3, title: "Excursion à Ifrane", date: "10 Avril 2024", summary: "Le club environnement a organisé une excursion éducative à Ifrane.", image: "https://picsum.photos/seed/event3/1200/900" }
+                { id: 1, title: "Marche Verte", date: "06 Novembre 2024", summary: "En commémoration de la glorieuse Marche Verte, l'école a organisé des activités éducatives et artistiques pour ancrer les valeurs de citoyenneté.", image: "https://picsum.photos/seed/event1/1200/900", videoUrl: "https://www.youtube.com/watch?v=u8y4m5biv5Y" },
+                { id: 2, title: "Rencontre Culturelle du Printemps", date: "20 Mai 2024", summary: "Des journées culturelles portes ouvertes comprenant des pièces de théâtre et des ateliers artistiques créés par nos élèves.", image: "https://picsum.photos/seed/event2/1200/900" },
+                { id: 3, title: "Excursion à Ifrane", date: "10 Avril 2024", summary: "Le club environnement a organisé une excursion éducative à Ifrane pour découvrir la biodiversité et sensibiliser à l'écologie.", image: "https://picsum.photos/seed/event3/1200/900" }
             ]
         },
         lessonsPage: {
@@ -191,7 +210,13 @@ const App: React.FC = () => {
     const [activePage, setActivePage] = useState<string>('home');
     const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [publicLessons, setPublicLessons] = useState<Lesson[]>([]); // الدروس العامة
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+    const showToast = (message: string, type: ToastType) => {
+        setToast({ message, type });
+    };
 
     // Load content from database on app start
     useEffect(() => {
@@ -279,13 +304,38 @@ const App: React.FC = () => {
         loadContent();
     }, []);
 
+    // Load public lessons
+    useEffect(() => {
+        const loadPublicLessons = async () => {
+            const result = await getPublicLessons();
+            if (result.success && result.data) {
+                setPublicLessons(result.data);
+            }
+        };
+        loadPublicLessons();
+    }, [activePage]); // Reload when page changes
+
     useEffect(() => {
         document.documentElement.lang = language;
         document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
     }, [language]);
 
+    // Restore session on load
+    useEffect(() => {
+        const { data: { subscription } } = onAuthStateChange((user) => {
+            if (user) {
+                console.log('🔄 Session Restored:', user.role);
+                setCurrentUser(user.role as UserRole);
+            } else {
+                setCurrentUser(null);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
     const handleLogin = (role: UserRole) => {
-        setCurrentUser(role);
+        // setCurrentUser will be updated by onAuthStateChange
         if (role === 'admin') {
             setActivePage('home');
         } else {
@@ -311,15 +361,16 @@ const App: React.FC = () => {
                 setSaveStatus('saved');
                 setHasUnsavedChanges(false);
                 console.log('Content saved successfully');
+                showToast(language === 'ar' ? 'تم حفظ التعديلات بنجاح' : 'Modifications enregistrées avec succès', 'success');
             } else {
                 setSaveStatus('unsaved');
                 console.error('Failed to save content:', result.error);
-                alert(language === 'ar' ? 'فشل حفظ التعديلات' : 'Échec de la sauvegarde');
+                showToast(language === 'ar' ? 'فشل حفظ التعديلات' : 'Échec de la sauvegarde', 'error');
             }
         } catch (error) {
             setSaveStatus('unsaved');
             console.error('Error saving content:', error);
-            alert(language === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'Erreur lors de la sauvegarde');
+            showToast(language === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'Erreur lors de la sauvegarde', 'error');
         }
     }, [isEditable, language, content]);
 
@@ -529,6 +580,7 @@ const App: React.FC = () => {
             case 'news':
                 return (
                     <News
+                        language={language}
                         content={content[language].news}
                         isEditable={isEditable}
                         onUpdateTitle={updateNewsTitle}
@@ -540,7 +592,15 @@ const App: React.FC = () => {
                     <LessonsPage
                         language={language}
                         content={content[language].lessonsPage}
-                        materials={[]}
+                        materials={publicLessons.map((lesson, index) => ({
+                            id: index,
+                            title: lesson.title,
+                            className: lesson.class_level,
+                            type: lesson.type,
+                            fileName: lesson.file_name || 'file.pdf',
+                            date: new Date(lesson.created_at).toLocaleDateString(language === 'ar' ? 'ar-MA' : 'fr-FR'),
+                            fileUrl: lesson.file_url
+                        }))}
                         isEditable={isEditable}
                         onUpdate={updateLessonsPage}
                     />
@@ -658,7 +718,17 @@ const App: React.FC = () => {
                 onUpdate={updateFooter}
             />
 
+
             <ChatWidget language={language} />
+
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                    rtl={language === 'ar'}
+                />
+            )}
         </div>
     );
 };

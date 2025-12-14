@@ -196,10 +196,15 @@ const LessonsPage: React.FC<LessonsPageProps> = ({ language, content, materials,
                                         {t.preview}
                                     </button>
 
-                                    <button className="flex-1 flex items-center justify-center gap-2 bg-yassamine-blue hover:bg-yassamine-blue/90 text-white font-bold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg">
+                                    <a
+                                        href={item.fileUrl || '#'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex-1 flex items-center justify-center gap-2 bg-yassamine-blue hover:bg-yassamine-blue/90 text-white font-bold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
+                                    >
                                         <IconDownload className="w-5 h-5" />
                                         {t.download}
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         ))
@@ -235,33 +240,50 @@ const LessonsPage: React.FC<LessonsPageProps> = ({ language, content, materials,
                             </button>
                         </div>
 
-                        <div className="flex-grow bg-gray-100 relative overflow-hidden flex items-center justify-center">
-                            {/* In a real app, this would be the PDF URL. For demo, we show a placeholder or the image if available. 
-                                Since we don't have real PDFs, we'll show a friendly placeholder message. */}
-                            <div className="text-center p-8">
-                                <IconFileText className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-                                <p className="text-gray-500 font-medium text-lg">
-                                    {language === 'ar' ? 'معاينة الملف غير متاحة في هذا الإصدار التجريبي.' : 'L\'aperçu du fichier n\'est pas disponible dans cette version de démonstration.'}
-                                </p>
-                                <p className="text-gray-400 text-sm mt-2">
-                                    {previewMaterial.fileName}
-                                </p>
-                            </div>
-
-                            {/* If we had actual PDF URLs, we would use an iframe like this: 
-                            <iframe 
-                                src={`path/to/files/${previewMaterial.fileName}`} 
-                                className="w-full h-full" 
-                                title={previewMaterial.title}
-                            />
-                            */}
+                        <div className="flex-grow bg-gray-100 relative overflow-hidden">
+                            {previewMaterial.fileUrl ? (
+                                <iframe
+                                    src={previewMaterial.fileUrl}
+                                    className="w-full h-full border-0"
+                                    title={previewMaterial.title}
+                                />
+                            ) : (
+                                <div className="flex items-center justify-center h-full">
+                                    <div className="text-center p-8">
+                                        <IconFileText className="w-20 h-20 text-gray-300 mx-auto mb-4" />
+                                        <p className="text-gray-500 font-medium text-lg">
+                                            {language === 'ar' ? 'لا يوجد ملف للمعاينة' : 'Aucun fichier à prévisualiser'}
+                                        </p>
+                                        <p className="text-gray-400 text-sm mt-2">
+                                            {previewMaterial.fileName}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
-                            <button className="flex items-center gap-2 bg-yassamine-blue hover:bg-yassamine-blue/90 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-md">
+                        <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                            {previewMaterial.fileUrl && (
+                                <a
+                                    href={previewMaterial.fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 px-6 rounded-xl transition-all"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                    </svg>
+                                    {language === 'ar' ? 'فتح في نافذة جديدة' : 'Ouvrir dans un nouvel onglet'}
+                                </a>
+                            )}
+                            <a
+                                href={previewMaterial.fileUrl || '#'}
+                                download
+                                className="flex items-center gap-2 bg-yassamine-blue hover:bg-yassamine-blue/90 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-md"
+                            >
                                 <IconDownload className="w-5 h-5" />
                                 {t.download}
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>

@@ -16,6 +16,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ language }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [isPublic, setIsPublic] = useState(true); // عام أو خاص
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -33,17 +34,33 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ language }) => {
   // جلب معرف الأستاذ عند التحميل
   useEffect(() => {
     const fetchTeacherId = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('teachers')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          console.log('🔐 Authenticated user:', user.email);
 
-        if (data) {
-          setTeacherId(data.id);
+          const { data, error } = await supabase
+            .from('teachers')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (error) {
+            console.error('Error fetching teacher:', error);
+            return;
+          }
+
+          if (data) {
+            console.log('👤 Teacher ID found:', data.id);
+            setTeacherId(data.id);
+          } else {
+            console.warn('⚠️ No teacher record found for this user');
+          }
+        } else {
+          console.warn('⚠️ No authenticated user found');
         }
+      } catch (error) {
+        console.error('Error in fetchTeacherId:', error);
       }
     };
     fetchTeacherId();
@@ -101,7 +118,8 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ language }) => {
         type: contentType,
         file_url: uploadResult.data.publicUrl,
         file_name: file.name,
-        teacher_id: teacherId
+        teacher_id: teacherId,
+        is_public: isPublic
       };
 
       const createResult = await createLesson(lessonData);
@@ -118,6 +136,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ language }) => {
       setDescription('');
       setSubject('');
       setFile(null);
+      setIsPublic(true);
       if (fileInputRef.current) fileInputRef.current.value = '';
 
       alert(language === 'ar' ? 'تم رفع الملف بنجاح!' : 'Fichier téléchargé avec succès!');
@@ -158,12 +177,16 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ language }) => {
     submit: language === 'ar' ? 'نشر المحتوى' : 'Publier',
     noFiles: language === 'ar' ? 'لا توجد ملفات مرفوعة حالياً' : 'Aucun fichier téléchargé',
     loading: language === 'ar' ? 'جاري التحميل...' : 'Chargement...',
+    visibilityLabel: language === 'ar' ? 'ظهور المحتوى' : 'Visibilité',
+    public: language === 'ar' ? 'عام (للجميع)' : 'Public (tous)',
+    private: language === 'ar' ? 'خاص (للتلاميذ فقط)' : 'Privé (élèves)',
     tableHeader: {
       title: language === 'ar' ? 'العنوان' : 'Titre',
       subject: language === 'ar' ? 'المادة' : 'Matière',
       class: language === 'ar' ? 'القسم' : 'Classe',
       type: language === 'ar' ? 'النوع' : 'Type',
       date: language === 'ar' ? 'التاريخ' : 'Date',
+      visibility: language === 'ar' ? 'الظهور' : 'Visibilité',
       actions: language === 'ar' ? 'الإجراءات' : 'Actions'
     }
   };
@@ -227,6 +250,27 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ language }) => {
                       <input type="radio" name="contentType" className="hidden" checked={contentType === 'exercise'} onChange={() => setContentType('exercise')} />
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
                       {t.exercise}
+                    </label>
+                  </div>
+                </div>
+
+                {/* Visibility Toggle */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.visibilityLabel}</label>
+                  <div className="flex gap-4">
+                    <label className={`flex-1 flex items-center justify-center gap-2 cursor-pointer p-3 rounded-lg border transition ${isPublic ? 'bg-green-50 border-green-200 text-green-700 font-bold' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                      <input type="radio" name="visibility" className="hidden" checked={isPublic} onChange={() => setIsPublic(true)} />
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+                      </svg>
+                      {t.public}
+                    </label>
+                    <label className={`flex-1 flex items-center justify-center gap-2 cursor-pointer p-3 rounded-lg border transition ${!isPublic ? 'bg-purple-50 border-purple-200 text-purple-700 font-bold' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                      <input type="radio" name="visibility" className="hidden" checked={!isPublic} onChange={() => setIsPublic(false)} />
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                      </svg>
+                      {t.private}
                     </label>
                   </div>
                 </div>
@@ -316,6 +360,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ language }) => {
                         <th className="px-6 py-4 text-start">{t.tableHeader.subject}</th>
                         <th className="px-6 py-4 text-start">{t.tableHeader.class}</th>
                         <th className="px-6 py-4 text-start">{t.tableHeader.type}</th>
+                        <th className="px-6 py-4 text-start">{t.tableHeader.visibility}</th>
                         <th className="px-6 py-4 text-start">{t.tableHeader.date}</th>
                         <th className="px-6 py-4 text-center">{t.tableHeader.actions}</th>
                       </tr>
@@ -344,6 +389,23 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ language }) => {
                               <span className="text-blue-600 bg-blue-100 px-2 py-1 rounded-full text-xs font-bold">{t.lesson}</span>
                             ) : (
                               <span className="text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full text-xs font-bold">{t.exercise}</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            {lesson.is_public ? (
+                              <span className="text-green-600 bg-green-100 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3" />
+                                </svg>
+                                {t.public}
+                              </span>
+                            ) : (
+                              <span className="text-purple-600 bg-purple-100 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                                </svg>
+                                {t.private}
+                              </span>
                             )}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">

@@ -4,13 +4,14 @@ import { Language, NewsContent } from '../types';
 import ImageUploader from './ImageUploader';
 
 interface NewsProps {
+   language: Language;
    content: NewsContent;
    isEditable: boolean;
    onUpdateTitle: (val: string) => void;
    onUpdateItem: (id: number, field: 'title' | 'date' | 'summary' | 'image' | 'videoUrl', val: string) => void;
 }
 
-const News: React.FC<NewsProps> = ({ content, isEditable, onUpdateTitle, onUpdateItem }) => {
+const News: React.FC<NewsProps> = ({ language, content, isEditable, onUpdateTitle, onUpdateItem }) => {
 
    const getEmbedUrl = (url: string) => {
       if (!url) return null;
@@ -72,7 +73,7 @@ const News: React.FC<NewsProps> = ({ content, isEditable, onUpdateTitle, onUpdat
                            <div className="absolute top-2 right-2 z-10 bg-white/90 p-1 rounded shadow text-xs">
                               <input
                                  type="text"
-                                 placeholder="Video URL (YouTube)"
+                                 placeholder={language === 'ar' ? "رابط فيديو (YouTube)" : "Lien Vidéo (YouTube)"}
                                  value={item.videoUrl || ''}
                                  onChange={(e) => onUpdateItem(item.id, 'videoUrl', e.target.value)}
                                  className="border border-gray-300 rounded px-1 w-32 focus:w-48 transition-all"
@@ -114,7 +115,7 @@ const News: React.FC<NewsProps> = ({ content, isEditable, onUpdateTitle, onUpdat
                         )}
 
                         <a href="#" className="mt-4 text-yassamine-blue font-bold text-sm hover:underline inline-block">
-                           Read More &rarr;
+                           {language === 'ar' ? 'اقرأ المزيد' : 'Lire la suite'} &rarr;
                         </a>
                      </div>
                   </div>

@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { compressImage } from '../utils/imageUtils';
 
 interface ImageUploaderProps {
   src: string;
@@ -21,16 +22,23 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (reader.result) {
-          onUpload(reader.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedBase64 = await compressImage(file);
+        onUpload(compressedBase64);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+        // Fallback to original file if compression fails
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (reader.result) {
+            onUpload(reader.result as string);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 

@@ -6,71 +6,61 @@ export interface AuthUser {
     role: 'admin' | 'teacher' | 'student' | 'parent';
     full_name: string;
     phone?: string;
+    subjects?: string[];
+    student_code?: string;
+    class_level?: string;
+    birth_date?: string;
 }
 
-// Sign up new user
-export const signUp = async (
-    email: string,
-    password: string,
-    fullName: string,
-    role: 'admin' | 'teacher' | 'student' | 'parent'
-) => {
-    try {
-        // 1. Create auth user
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email,
-            password,
-        });
-
-        if (authError) throw authError;
-        if (!authData.user) throw new Error('No user returned');
-
-        // 2. Create user profile
-        const { error: profileError } = await supabase
-            .from('users')
-            .insert({
-                id: authData.user.id,
-                email,
-                role,
-                full_name: fullName,
-            });
-
-        if (profileError) throw profileError;
-
-        return { success: true, user: authData.user };
-    } catch (error: any) {
-        console.error('Signup error:', error);
-        return { success: false, error: error.message };
-    }
-};
-
-// Sign in
+// Sign In with Supabase Auth
 export const signIn = async (email: string, password: string) => {
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        console.log(`🔌 Attempting Supabase login for: ${email}`);
+
+        // 1. تسجيل الدخول عبر Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
             email,
-            password,
+            password
         });
 
-        if (error) throw error;
+        if (authError) {
+            console.error('❌ Supabase auth error:', authError.message);
+            return { success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
+        }
 
-        // Get user profile
+        if (!authData.user) {
+            return { success: false, error: 'لم يتم العثور على المستخدم' };
+        }
+
+        console.log('✅ Supabase auth success for:', authData.user.email);
+
+        // 2. جلب بيانات المستخدم من جدول public.users
         const { data: profile, error: profileError } = await supabase
             .from('users')
             .select('*')
-            .eq('id', data.user.id)
+            .eq('id', authData.user.id)
             .single();
 
-        if (profileError) throw profileError;
+        if (profileError || !profile) {
+            console.error('❌ Profile fetch error:', profileError?.message);
+            return { success: false, error: 'فشل جلب بيانات المستخدم' };
+        }
 
-        return { success: true, user: data.user, profile };
+        console.log('✅ User profile loaded:', profile.full_name);
+
+        return {
+            success: true,
+            user: authData.user,
+            profile: profile as AuthUser
+        };
+
     } catch (error: any) {
         console.error('Signin error:', error);
         return { success: false, error: error.message };
     }
 };
 
-// Sign out
+// Sign Out
 export const signOut = async () => {
     try {
         const { error } = await supabase.auth.signOut();
@@ -85,17 +75,24 @@ export const signOut = async () => {
 // Get current user
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        // 1. جلب المستخدم من Supabase Auth
+        const { data: { user }, error } = await supabase.auth.getUser();
 
-        if (!user) return null;
+        if (error || !user) {
+            return null;
+        }
 
-        const { data: profile } = await supabase
+        // 2. جلب بيانات الملف الشخصي من public.users
+        const { data: profile, error: profileError } = await supabase
             .from('users')
             .select('*')
             .eq('id', user.id)
             .single();
 
-        if (!profile) return null;
+        if (profileError || !profile) {
+            console.error('Error fetching user profile:', profileError?.message);
+            return null;
+        }
 
         return profile as AuthUser;
     } catch (error) {
@@ -104,14 +101,34 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     }
 };
 
-// Listen to auth state changes
+// Auth State Change listener
 export const onAuthStateChange = (callback: (user: AuthUser | null) => void) => {
-    return supabase.auth.onAuthStateChange(async (event, session) => {
+    // الاستماع لتغييرات حالة المصادقة
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('🔄 Auth state changed:', event);
+
         if (session?.user) {
-            const user = await getCurrentUser();
-            callback(user);
+            // جلب الملف الشخصي
+            const { data: profile } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+
+            if (profile) {
+                console.log('🔄 Session Restored:', profile.role);
+                callback(profile as AuthUser);
+            } else {
+                callback(null);
+            }
         } else {
             callback(null);
         }
     });
+
+    return {
+        data: {
+            subscription
+        }
+    };
 };

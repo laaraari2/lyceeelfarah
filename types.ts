@@ -38,6 +38,7 @@ export interface TeacherMaterial {
   type: 'lesson' | 'exercise';
   fileName: string;
   date: string;
+  fileUrl?: string; // رابط التحميل
 }
 
 // New Sections
@@ -53,10 +54,18 @@ export interface RulesContent {
   items: string[];
 }
 
+export interface Club {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+}
+
 export interface LifeContent {
   title: string;
   description: string;
   image: string;
+  clubs?: Club[];
 }
 
 export interface NewsItem {
@@ -95,6 +104,7 @@ export interface SiteContent {
     subtitle: string;
     ctaPrimary: string;
     ctaSecondary: string;
+    image?: string;
   };
   stats: Stat[];
   levels: {

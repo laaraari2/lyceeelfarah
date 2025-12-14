@@ -10,6 +10,7 @@ export interface Lesson {
     file_url?: string;
     file_name?: string;
     teacher_id?: string;
+    is_public: boolean; // عام أو خاص
     created_at: string;
     updated_at: string;
 }
@@ -23,6 +24,7 @@ export interface CreateLessonData {
     file_url?: string;
     file_name?: string;
     teacher_id?: string;
+    is_public?: boolean; // عام أو خاص (افتراضي: true)
 }
 
 /**
@@ -39,6 +41,25 @@ export const getAllLessons = async () => {
         return { success: true, data };
     } catch (error: any) {
         console.error('Error fetching lessons:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+/**
+ * جلب الدروس العامة فقط (للصفحة العامة)
+ */
+export const getPublicLessons = async () => {
+    try {
+        const { data, error } = await supabase
+            .from('lessons')
+            .select('*')
+            .eq('is_public', true)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return { success: true, data };
+    } catch (error: any) {
+        console.error('Error fetching public lessons:', error);
         return { success: false, error: error.message };
     }
 };
